@@ -116,8 +116,10 @@ This kit is set up for the full thing, not just a single router call:
 - **Web search.** Drop a `TAVILY_API_KEY` (or SerpAPI/Brave) into `.env` and the
   swarm exposes a `web_search` tool so workers/verifier can ground answers on live
   data instead of stale weights.
-- **Best models, picked per role.** See `MODELS.md` — Claude for judgement/verify,
-  DeepSeek-V4 for cheap heavy reasoning + coding, GPT/Gemini for diversity.
+- **Best models, picked per role.** See `MODELS.md` (what to run/download) and
+  `BENCHMARKS.md` (the scores behind the picks). Default pool is all the strong
+  models **bar GPT**, plus out-of-the-way open ones (Nemotron 3, Kimi K2.6,
+  GLM-5.1) for diversity.
 - **GPU training.** `./train.sh router` trains the tiny TRINITY router gradient-free
   (no GPU, minutes). `./train.sh conductor` trains the 3B Conductor with RL —
   rent an 8×A100/H100 cloud box and run it there (notes in `train.sh`).
