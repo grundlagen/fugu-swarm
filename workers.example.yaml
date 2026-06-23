@@ -29,29 +29,39 @@ control:
   # calls only — it multiplies API spend per query.
 
 workers:
-  # --- Local, fully offline (Ollama). Start with `ollama serve`. ---
-  - name: local-llama
-    model: ollama/llama3.1:8b
-    roles: [thinker, worker, verifier]
-    api_base: http://localhost:11434
+  # --- All-cloud pool (matches .env SLOT_MODELS). Set keys in .env. -----------
+  - name: claude
+    model: anthropic/claude-opus-4-8      # needs ANTHROPIC_API_KEY
+    roles: [thinker, verifier]            # strongest judgement -> verify
 
-  - name: local-deepseek
-    model: ollama/deepseek-r1:7b
+  - name: gemini
+    model: gemini/gemini-3.1-pro          # needs GEMINI_API_KEY
     roles: [thinker, worker]
-    api_base: http://localhost:11434
 
-  # --- Frontier API workers (set keys in .env; names are editable). Per-call cost. ---
-  # - name: claude
-  #   model: anthropic/claude-opus-4-8        # needs ANTHROPIC_API_KEY
-  #   roles: [thinker, verifier]              # strong model verifies cheap output
-  #
+  - name: deepseek-reasoner
+    model: deepseek/deepseek-reasoner     # needs DEEPSEEK_API_KEY
+    roles: [thinker]                      # cheap heavy reasoning
+
+  - name: deepseek-chat
+    model: deepseek/deepseek-chat         # needs DEEPSEEK_API_KEY
+    roles: [worker, verifier]             # cheap strong coding
+
+  - name: kimi
+    model: openrouter/moonshotai/kimi-k2.6   # needs OPENROUTER_API_KEY
+    roles: [worker]
+
+  - name: glm
+    model: openrouter/z-ai/glm-5.1        # needs OPENROUTER_API_KEY
+    roles: [worker, verifier]
+
+  - name: nemotron
+    model: nvidia_nim/nvidia/nemotron-3-ultra  # needs NVIDIA_NIM_API_KEY
+    roles: [thinker, worker]
+
+  # GPT excluded by choice. To re-add:
   # - name: gpt
-  #   model: openai/gpt-5.5                    # needs OPENAI_API_KEY
+  #   model: openai/gpt-5.5               # needs OPENAI_API_KEY
   #   roles: [worker, verifier]
-  #
-  # - name: gemini
-  #   model: gemini/gemini-3.1-pro             # needs GEMINI_API_KEY
-  #   roles: [thinker, worker]
 
 server:
   host: 0.0.0.0
