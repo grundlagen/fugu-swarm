@@ -81,6 +81,9 @@ $EDITOR .env
 
 # 4. Serve the OpenAI-compatible endpoint on :8088
 ./serve.sh
+
+# (optional) train the tiny router for your worker pool — no GPU, minutes
+./train.sh router
 ```
 
 Point any OpenAI-compatible client (incl. Claude Code) at `http://localhost:8088/v1`
@@ -100,6 +103,28 @@ and call the single model name `fugu`.
 `workers.example.yaml` documents the role/topology/verify-retry knobs and the
 local-vs-frontier mixing strategy in more detail (it's reference; `.env` is the
 runtime drop-in).
+
+## Swarm capabilities, web search & GPU training
+
+This kit is set up for the full thing, not just a single router call:
+
+- **Swarm / topologies.** The coordinator runs multi-turn with Thinker / Worker /
+  Verifier roles and picks a topology per query: `single`, `sequential`,
+  `parallel` (fan-out), or `debate` (multiple frontier models argue, then
+  synthesize). Bounded recursive retry kicks in when the Verifier's confidence is
+  below threshold. Tune these in `workers.example.yaml` (`control:` block).
+- **Web search.** Drop a `TAVILY_API_KEY` (or SerpAPI/Brave) into `.env` and the
+  swarm exposes a `web_search` tool so workers/verifier can ground answers on live
+  data instead of stale weights.
+- **Best models, picked per role.** See `MODELS.md` — Claude for judgement/verify,
+  DeepSeek-V4 for cheap heavy reasoning + coding, GPT/Gemini for diversity.
+- **GPU training.** `./train.sh router` trains the tiny TRINITY router gradient-free
+  (no GPU, minutes). `./train.sh conductor` trains the 3B Conductor with RL —
+  rent an 8×A100/H100 cloud box and run it there (notes in `train.sh`).
+
+Cloud running is the intended default: best API workers + optional cloud GPU for
+the conductor. Nothing here requires a local GPU unless you choose the conductor
+training path or self-host open weights.
 
 ## Alternatives & related projects
 
