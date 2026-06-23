@@ -1,0 +1,59 @@
+# Reference config for the Fugu-style orchestrator's worker pool.
+#
+# NOTE: the runtime drop-in for keys + model list is .env (SLOT_MODELS + *_API_KEY).
+# This file documents the role / topology / verify-retry knobs and the
+# local-vs-frontier mixing strategy. OpenFugu routes via litellm, so any
+# litellm-supported "provider/model" works.
+#
+# Two regimes (see README):
+#   - Frontier API workers  -> real Fugu-quality, costs per call.
+#   - Local Ollama workers   -> fully local / Termux-friendly, small-model quality.
+# Mix them: cheap local model as Worker, frontier model as Verifier, etc.
+
+coordinator:
+  # "router"    = TRINITY-style Qwen3-0.6B backbone + ~19.5K-param head.
+  #               Negligible RAM, trains gradient-free. Best for Termux. (default)
+  # "conductor" = di-zhang-fdu/openfugu-conductor-3b (Llama-3.2-3B, ~6 GB).
+  #               Heavier Fugu-Ultra / workflow-DAG path. Not for phones.
+  type: router
+  conductor_weights: ./.fugu/weights/openfugu-conductor-3b
+
+# Bounded recursive retry: if the Verifier's confidence is below threshold,
+# spawn one corrective pass. Cap depth or costs run away.
+control:
+  verify: true
+  verify_confidence_threshold: 0.7
+  max_retry_depth: 2
+  default_topology: single        # single | sequential | parallel | debate
+  # Reserve "debate" (fan-out across frontier models) for contested, high-value
+  # calls only — it multiplies API spend per query.
+
+workers:
+  # --- Local, fully offline (Ollama). Start with `ollama serve`. ---
+  - name: local-llama
+    model: ollama/llama3.1:8b
+    roles: [thinker, worker, verifier]
+    api_base: http://localhost:11434
+
+  - name: local-deepseek
+    model: ollama/deepseek-r1:7b
+    roles: [thinker, worker]
+    api_base: http://localhost:11434
+
+  # --- Frontier API workers (set keys in .env; names are editable). Per-call cost. ---
+  # - name: claude
+  #   model: anthropic/claude-opus-4-8        # needs ANTHROPIC_API_KEY
+  #   roles: [thinker, verifier]              # strong model verifies cheap output
+  #
+  # - name: gpt
+  #   model: openai/gpt-5.5                    # needs OPENAI_API_KEY
+  #   roles: [worker, verifier]
+  #
+  # - name: gemini
+  #   model: gemini/gemini-3.1-pro             # needs GEMINI_API_KEY
+  #   roles: [thinker, worker]
+
+server:
+  host: 0.0.0.0
+  port: 8088
+  served_model_name: fugu          # clients call this as a single model

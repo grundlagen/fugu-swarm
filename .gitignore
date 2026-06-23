@@ -1,0 +1,12 @@
+# Everything heavy lands here: cloned OpenFugu, Qwen3-0.6B backbone, checkpoints,
+# the 3B Conductor weights, and the venv. Never commit any of it.
+.fugu/
+
+# Local secrets — only .env.example is tracked.
+.env
+
+# Python / editor noise
+__pycache__/
+*.pyc
+.venv/
+.DS_Store
